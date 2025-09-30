@@ -168,8 +168,8 @@ añadir al fichero '.bashrc' las líneas:
   	  (display-graphic-p)
   	  (eq window-system 'w32))
       (progn
-        (setq frame-height 59)
-        (setq frame-height 56)
+        ;;(setq frame-height 59) ; Portátil HP Marián
+        (setq frame-height 51) ; Monitor LG IPS LED
         (setq frame-width 90)
         (setq frame-left 0)
         (setq frame-top 0)
