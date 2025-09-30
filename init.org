@@ -1,0 +1,556 @@
+#+TITLE: Configuración de 'emacs'
+#+AUTHOR José Antonio Navarro Ramón
+#+EMAIL janr.devel@gmail.com
+#+STARTUP: show2levels
+#(overview, content, showall, show2levels ... show5levels, showeverything)
+
+OBJETIVO:
+
+* Compilación del código fuente
+COMPILACIÓN CÓDIGO FUENTE:
+Leer el fichero 'INSTALL' del código fuente y
+~$ ./configure --with-dbus --with-gif --with-jpeg --with-png --with-rsvg
+               --with-tiff --with-xft --with-gpm=no --with-imagemagick
+	       --with-xtoolkit=yes --with-modules --with-native-compilation
+	       --with-pgtk --with-tree-sitter --without-pop --prefix=/usr/local~
+~$ make$~
+~$ sudo make install~
+
+
+* 'Emacs' en modo servidor
+MODO SERVIDOR:
+Este archivo contiene la configuración que utilizo para emacs.
+Si se utiliza 'emacs' en modo servidor, hay que habilitarlo con:
+~$ systemctl --user enable emacs$~
+y en el siguiente inicio de sesión 'systemd' lo arrancará por defecto. 
+Para arrancarlo manualmente sin necesidad de cerrar la sesión y abrirla
+de nuevo, basta con teclear:
+~$ systemctl --user start emacs~
+Por último, si se modificara el fichero 'init.el', habría que reiniciar el
+servidor:
+~$ systemctl --user restart emacs~.
+Para indicar al sistema que el editor por defecto es el cliente se puede
+añadir al fichero '.bashrc' las líneas:
+~export EDITOR='emacsclient -c'~
+~export VISUAL='emacsclient -c'~.
+
+
+* Comentarios sobre el código
+  Estos comentarios se refieren al gestor de paquetes 'package.el'.
+  Si se utilizara otro, como 'elpaca.el' o 'straight.el', habría que consultar
+  la documentación pertinente.
+** use-package
+   Is a configuration macro that among other thigs calls 'require', which loads
+   the package.
+   Essentiallly, it allows you to write shorter configurations for a package
+   and to eliminate repetition and other extra boilerplate code.
+   For example, =(use-package denote)= loads the 'denote' package, using
+   =(require 'denote)=.
+*** :ensure
+    The keyword =:ensure t= tells 'use-package' to ensure that the package is
+    installed, if it is not already on the machine. If it is already installed,
+    then 'use-package' will do anything more. It will enable it, but it will
+    not try to reinstall it.
+    On the other hand, =:ensure nil= tells 'use-package' do not try to install
+    this. Normally we use this when the package is already installed in 'emacs'.
+    The variable =use-package-always-ensure= is defined in
+    'use-package-ensure.el', its value is 'nil' by defect. If it was 't' then
+    we will not need to add =:ensure t=, but in case we need not to install the
+    package we must write =:ensure nil=. That said, I'm not very fond of this
+    variable.
+*** :config
+    This keyword tells 'use-package' to evaluate the following code after the
+    package has been loaded.
+*** :init
+    Sometimes, when you are loading a package, you want to make sure that some
+    variables are already in there before that package is loaded. It is not too
+    common, but there are some cases when we need this (consult the
+    documentation of the package).
+    For example, the 'corfu' package shows a pop up every time we hit 'TAB' to
+    allow us to complete what we are writing.
+    But before loading this package we want to achieve that the variable
+    'tab-always-indent' has the value 'complete. What we want here is to tell
+    that 'TAB' is going to complete if indentation is not the right option.
+    ~(use-package corfu
+       :init
+       (setq tab-always-indent 'complete)
+       :config
+       ...)~
+    So ':init wil be called first and :config will be called afterwords.
+    6:36
+    
+
+* Código básico
+** Primeros ajustes básicos de emacs
+#+BEGIN_SRC emacs-lisp
+  ;;-----------------------------------------------------------------------
+  ;; Cógigo básico
+  (setq inhibit-startup-message t) ; Inhibe pantalla de presentación
+  (scroll-bar-mode -1)             ; Quita barra de desplazamiento
+  (tool-bar-mode -1)               ; Quita barra de herramientas
+  (menu-bar-mode -1)               ; Quita barra de menú
+  (global-set-key [f2] 'toggle-menu-bar-mode-from-frame)
+  (set-fringe-mode 10)             ; Margen algo más ancho
+  (setq visible-bell t)            ; Desactiva sonido de error
+  (show-paren-mode 1)               ; Señala paréntesis que se corresponden
+  (defalias 'yes-or-no-p 'y-or-n-p) ; Confirmación concisa yes-no
+  (global-visual-line-mode 1)
+  (global-set-key [remap list-buffers] 'ibuffer) ; Utilizar ibuffer al teclear C-x C-b
+  (setq use-dialog-box nil) ; No mostrar cuadros de diálogo gráfico cuando se pida
+                            ; respuesta
+  (global-hl-line-mode 1)   ; Destaca ligeramente la línea actual
+#+END_SRC
+
+** Almacenar copias de seguridad en otro directorio
+#+BEGIN_SRC emacs-lisp
+  ;; Para desactivar: (setq make-backup-files nil)
+  (setq backup-directory-alist
+        `(("." . ,(expand-file-name "tmp/backups/" user-emacs-directory))))
+  (make-directory (expand-file-name "tmp/auto-saves/" user-emacs-directory) t)
+  (setq auto-save-list-file-prefix (expand-file-name "tmp/auto-saves/sessions/"
+                                                     user-emacs-directory)
+        auto-save-file-name-transforms `((".*" ,(expand-file-name "tmp/auto-saves/"
+                                                                  user-emacs-directory) t)))
+#+END_SRC
+
+** Fichero de variables personalizado
+#+BEGIN_SRC emacs-lisp
+  ;; Las variables personalizadas se guardan en el fichero 'custom-vars.el'
+  (setq custom-file (locate-user-emacs-file "custom-vars.el"))
+  (load custom-file 'noerror 'nomessage)
+#+END_SRC
+
+** Números de línea y columna
+#+BEGIN_SRC emacs-lisp
+  ;; ---------------------------------------------------------------------
+  ;; Activa números de línea globalmente
+  (column-number-mode 1)            ; Número de columna en la línea de estado
+  (global-display-line-numbers-mode 1) ; Habilita globalmente los números de línea.
+  ;; Deshabilita números de línea para ciertos modos
+  (dolist (mode '(org-mode-hook
+		  term-mode-hook
+		  eshell-mode-hook
+		  shell-mode-hook
+		  term-mode-hook
+		  LaTeX-mode-hook
+		  scheme-mode-hook))
+    (add-hook mode (lambda () (display-line-numbers-mode 0))))
+#+END_SRC
+
+** Recuerda ficheros abiertos recientemente
+#+BEGIN_SRC emacs-lisp
+  ;; M-x recentf-open-files
+  (recentf-mode 1)
+#+END_SRC
+
+** UTF-8
+#+BEGIN_SRC emacs-lisp
+(set-language-environment 'utf-8)
+(setq locale-coding-system 'utf-8)
+;; Establecer la codificación por defecto
+(prefer-coding-system 'utf-8)
+(setq default-file-name-coding-system 'utf-8)
+(set-default-coding-systems 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+(if (boundp 'buffer-file-coding-system)
+(setq-default buffer-file-coding-system 'utf-8)
+(setq default-buffer-file-coding-system 'utf-8))
+(setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
+#+END_SRC
+
+** Tamaño pantalla
+#+BEGIN_SRC emacs-lisp
+  ;;-----------------------------------------------------------------------
+  ;; Tamaño y posición de la ventana gráfica
+  (if
+      (or (not initial-window-system)
+  	  (display-graphic-p)
+  	  (eq window-system 'w32))
+      (progn
+        (setq frame-height 59)
+        (setq frame-height 56)
+        (setq frame-width 90)
+        (setq frame-left 0)
+        (setq frame-top 0)
+        (add-to-list 'default-frame-alist `(top  . ,frame-top))
+        (add-to-list 'default-frame-alist `(left  . ,frame-left))
+        (add-to-list 'default-frame-alist `(width  . ,frame-width))
+        (add-to-list 'default-frame-alist `(height . ,frame-height))))
+#+END_SRC
+
+** Histórico (almacena las últimas entradas en el minibuffer)
+#+BEGIN_SRC emacs-lisp
+  ;; M-n / M-p
+  (setq history-length 25)
+  (savehist-mode 1)
+#+END_SRC
+
+** Melpa/Elpa
+Nótese que 'tipos de letra' debería ir en 'Código opcional', pues hay que descargar
+los tipos de letra que se refieren en ese apartado. Pero los temas gráficos hacen uso
+de ellos, por lo que se procesan en el orden en el que aparecen aquí.
+#+BEGIN_SRC emacs-lisp
+  ;;-----------------------------------------------------------------------
+  ;; Melpa
+  ;;(require 'package)
+  (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                           ("elpa" . "https://elpa.gnu.org/packages/")))
+#+END_SRC
+
+** Ventanas
+#+BEGIN_SRC  emacs-lisp
+  (global-set-key (kbd "M-o") 'other-window)
+  (use-package windmove
+    :config
+    (windmove-default-keybindings))
+#+END_SRC
+
+** Tipos de letra
+#+BEGIN_SRC emacs-lisp
+  ;; Main typeface Fedora
+  ;; Fedora
+  ;;(set-face-attribute 'default nil :family "Source Code Pro" :height 100)
+  ;; Proportionately spaced typeface
+  ;;(set-face-attribute 'variable-pitch nil :family "Fira Sans" :height 1.00)
+  ;; Monospaced typeface
+  ;;(set-face-attribute 'fixed-pitch nil :family "Fira Code" :height 1.00)
+  ;; Debian
+  (set-face-attribute 'default nil :family "Source Code Pro" :height 110)
+  ;; Proportionately spaced typeface
+  (set-face-attribute 'variable-pitch nil :family "Fira Sans" :height 1.10)
+  ;; Monospaced typeface
+  (set-face-attribute 'fixed-pitch nil :family "Fira Code" :height 1.10)
+  #+END_SRC
+
+** Temas gráficos
+Elegir entre los temas: modus-themes / ef-themes
+*** modus-themes
+#+BEGIN_SRC emacs-lisp
+;; ---------------------------------------------------------------------
+;; Tema gráfico
+;; ---
+(use-package modus-themes
+:ensure t
+:config
+;; Always reload the theme for changes to take effect!
+;; Add all your customizations prior to loading the theme
+(setq modus-themes-custom-autoreload nil))
+   
+;; Línea de modo
+;; Por defecto con borde y fondo suave
+;; borderless: sin borde
+;; 3d: efecto tridimensional
+;; accented: cambia de color
+;; moody: baja el texto hasta el fondo de la línea de modo
+;; padded: línea de modo algo más alta
+;;(setq modus-themes-mode-line '())
+;; ---
+;; Regiones activas (seleccionadas)
+;; por defecto color normal
+;; accented: Color más marcado de la región activa
+;; bg-only: Color más suave de la región activa
+;; no-extend: No extender la región activa fuera del texto
+(setq modus-themes-region '(bg-only))
+;; ---
+;; Color de completado (cuando está activo el modo icomplete-mode)
+;; nil
+;; minimal
+;; moderate
+;; opinionated
+(setq modus-themes-completions '(minimal))
+;; ---
+;; Sintaxis
+;;(setq modus-themes-bold-constructs t)
+(setq modus-themes-italic-constructs t)
+;; bold; intense 
+(setq modus-themes-paren-match '(intense))
+;; faint, all-syntax, green-strings, yellow-comments
+;;(setq modus-themes-syntax '(all-syntax faint yellow-strings))
+;; ---
+;; org mode
+;; rainbow overline background bold size
+(setq modus-themes-headings
+'((1 . (rainbow bold background 1.10))
+(2 . (rainbow bold 1.08))
+(3 . (rainbow bold 1.06))
+(4 . (bold 1.04))
+(t . (semilight 1.04))))
+
+;; ---
+;; Bloques de código fuente
+;; gray-background, tinted-background
+(setq modus-themes-org-blocks 'tinted-background)
+;;
+;;(setq modus-themes-mixed-fonts t)
+(setq modus-themes-mixed-fonts nil)
+;; ---
+;; modus-operandi: modo claro
+;; modus-vivendi: modo oscuro
+;; M-x modus-themes-toogle cambia entre ellos
+(load-theme 'modus-operandi t)
+#+END_SRC
+
+*** ef-themes
+
+;;#+BEGIN_SRC emacs-lisp
+  ;;-----------------------------------------------------------------------
+  ;; TEMA GRÁFICO: ef-themes
+  (use-package ef-themes
+    :ensure t
+    :config
+    ;; Always reload the theme for changes to take effect!
+    ;; Add all your customizations prior to loading the theme
+    ;; Make customisations that affect Emacs faces BEFORE loading a theme
+    ;; (any change needs a theme re-load to take effect).
+    (require 'ef-themes)
+
+    ;; If you like two specific themes and want to switch between them, you
+    ;; can specify them in `ef-themes-to-toggle' and then invoke the command
+    ;; `ef-themes-toggle'.  All the themes are included in the variable
+    ;; `ef-themes-collection'.
+    (setq ef-themes-to-toggle '(ef-summer ef-winter))
+
+    (setq ef-themes-headings
+	  '((1 light variable-pitch 1.3)
+	    (2 regular 1.15)
+	    (3 1.1)
+	    (agenda-date 1.2)
+	    (agenda-structure variable-pitch light 1.5)
+	    (t variable-pitch)))
+
+    ;; They are nil by default...
+    (setq ef-themes-mixed-fonts t
+	  ef-themes-variable-pitch-ui t)
+
+    ;; Read the doc string or manual for this one.  The symbols can be
+    ;; combined in any order.
+    (setq ef-themes-region '(intense no-extend neutral))
+
+    ;; Disable all other themes to avoid awkward blending:
+    (mapc #'disable-theme custom-enabled-themes)
+
+    ;; Load the theme of choice:
+    (load-theme 'ef-summer :no-confirm))
+
+** ORG bullets
+#+BEGIN_SRC emacs-lisp
+  ;;-----------------------------------------------------------------------
+  ;; Org-bullets
+  (use-package org-bullets
+    :ensure t
+    :init
+    (setq org-bullets-face-name "Inconsolata-10")
+    (setq org-bullets-bullet-list '("◉" "○" "►" ...))
+    :after org
+    :config (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+#+END_SRC
+** ORG Roam
+;;#+BEGIN_SRC emacs-lisp
+  (use-package org-roam
+    :ensure t)
+;;#+END_SRC
+
+** AUCTeX
+#+BEGIN_SRC emacs-lisp
+  ;;-----------------------------------------------------------------------
+  ;; AUCTeX
+  (use-package tex
+  :ensure auctex
+  :ensure auctex-lua
+  :config
+  (setq TeX-auto-save t)
+  (setq TeX-parse-self t)
+  (setq-default TeX-master nil)
+  (add-hook 'LaTeX-mode-hook 'visual-line-mode) ; podríamos preferir 'auto-fill-mode
+  (add-hook 'LaTeX-mode-hook 'flyspell-mode)
+  (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+  (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+  (setq reftex-plug-into-AUCTeX t))
+  ;;(luatex "LuaTeX" "luatex" "lualatex --jobname=%(s-filename-only)" "luatex")
+  (add-to-list 'auto-mode-alist '("\\.mkltx\\'" . ConTeXt-mode))
+  (setq require 'auctex-lua)
+#+END_SRC
+
+** Tramp
+#+BEGIN_SRC emacs-lisp
+  (use-package tramp
+    :ensure nil
+    :defer t
+    :config
+    (setq tramp-default-user "janr"
+	  tramp-default-method "ssh"))
+#+END_SRC  
+
+** Magit
+#+BEGIN_SRC emacs-lisp
+  ;;-----------------------------------------------------------------------
+  ;; Magit
+  (use-package magit
+  :ensure t
+  :bind ("C-x g" . magit-status))
+#+END_SRC
+
+** Exportación org-mode -> markdown
+#+BEGIN_SRC emacs-lisp
+  ;;-----------------------------------------------------------------------
+  ;; ox-gfm (exporta texto org-mode a markdown)
+  (use-package ox-gfm
+  :ensure t
+  :config
+  (eval-after-load "org"
+  '(require 'ox-gfm nil t)))
+  ;;-----------------------------------------------------------------------  
+#+END_SRC
+
+** Markdown mode
+#+BEGIN_SRC emacs-lisp
+  ;;-----------------------------------------------------------------------
+  (use-package markdown-mode
+  :ensure t
+  :mode ("README\\.md\\'" . gfm-mode)
+  :init (setq markdown-command "multimarkdown")
+  :bind (:map markdown-mode-map
+  	    ("C-c C-e" . markdown-do)))
+  ;;-----------------------------------------------------------------------  
+#+END_SRC
+** Geiser
+#+BEGIN_SRC emacs-lisp
+  
+  (package-install 'geiser)
+  (require 'geiser)
+#+END_SRC
+*** geiser-chez
+#+BEGIN_SRC emacs-lisp
+  (package-install 'geiser-chez)
+  (require 'geiser-chez)
+  ;;(setq geiser-scheme-implementation 'guile)
+#+END_SRC
+*** geiser-guile
+#+BEGIN_SRC emacs-lisp
+  (package-install 'geiser-guile)
+  (require 'geiser-guile)
+  ;;(setq geiser-scheme-implementation 'guile)
+#+END_SRC
+
+** Julia mode
+Para insertar caracteres griegos:
+M-x set-input-method [RET] TeX
+y se puede poner y quitar con:
+M-x toggle-input-method.
+#+BEGIN_SRC emacs-lisp
+  (package-install 'julia-mode)
+  (require 'julia-mode)
+#+END_SRC
+
+** CMake mode
+#+BEGIN_SRC emacs-lisp
+  (package-install 'cmake-mode)
+  (require 'cmake-mode)
+#+END_SRC
+
+** Meson mode
+#+BEGIN_SRC emacs-lisp
+  (package-install 'meson-mode)
+  (require 'meson-mode)
+#+END_SRC
+
+** Which key
+#+BEGIN_SRC emacs-lisp
+  (use-package which-key
+    :init (which-key-mode)
+    :diminish which-key-mode
+    :config (setq which-key-idle-delay 1))
+#+END_SRC
+
+** Vertico
+#+BEGIN_SRC emacs-lisp
+  (use-package vertico
+  :ensure t
+  :init (vertico-mode))
+#+END_SRC
+
+** Common Lisp
+#+BEGIN_SRC emacs-lisp
+  ;;-----------------------------------------------------------------------
+  ;; Lisp
+  ;;
+  ;; M-x slime -> abre la primera implementación lisp de la lista
+  ;; M-- M-x slime -> permite elegir una implementación lisp.
+  ;;
+  ;; Discrimina entre 'Windows' y Linux
+  
+  (cond
+   ((string-equal system-type "windows-nt")
+    (load (expand-file-name "c:/users/kmol/quicklisp/slime-helper.el")))
+   ((string-equal system-type "gnu/linux")
+    (load (expand-file-name "~/quicklisp/slime-helper.el"))))
+  ;; Utiliza 'sbcl' por defecto
+  (setq inferior-lisp-program "sbcl")
+  ;; Permite elegir una implementación de lisp: 'sbcl', 'ccl' y 'ecl'
+  (setq slime-lisp-implementations
+        '((sbcl ("/usr/local/bin/sbcl") :coding-system utf-8-unix)
+          (ccl ("~/.soft/lisp/clozure/ccl/lx86cl64"))
+          (ecl ("/usr/bin/ecl"))))
+#+END_SRC
+
+** Aspell
+;;#+BEGIN_SRC emacs-lisp
+  ;;-----------------------------------------------------------------------
+  ;; Aspell
+  (setq-default ispell-program-name "aspell")
+  (setq ispell-dictionary "castellano")
+;;#+END_SRC
+
+;;#+BEGIN_SRC common-lisp
+  ;;; The following lines added by ql:add-to-init-file:
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+;;#+END_SRC
+
+*** Fichero .sbclrc
+#+BEGIN_SRC common-lisp
+  ;;; The following lines added by ql:add-to-init-file:
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+#+END_SRC
+
+*** Fichero .eclrc
+#+BEGIN_SRC common-lisp
+;;; The following lines added by ql:add-to-init-file:
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
++END_SRC
+
+*** Fichero .ccl-init.lisp
+#+BEGIN_SRC common-lisp
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
++END_SRC
+
+
+* Código opcional
+Este código depende generalmente de la instalación de algún fichero y/o software externo.
+
+** Código fuente de emacs
+Se permite el acceso a la definición de elementos del código fuente de elisp
+mediante: =M-.=
+
+#+BEGIN_SRC emacs-lisp
+  ;;-----------------------------------------------------------------------
+  ;; Código fuente de emacs
+  (setq source-directory "~/.soft/emacs/emacs-30.1")
+#+END_SRC
+
