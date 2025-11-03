@@ -1,6 +1,7 @@
 #+TITLE: Configuración de 'emacs'
 #+AUTHOR José Antonio Navarro Ramón
 #+EMAIL janr.devel@gmail.com
+#+DATE 2025-10-29
 #+STARTUP: show2levels
 #(overview, content, showall, show2levels ... show5levels, showeverything)
 
@@ -221,7 +222,7 @@ de ellos, por lo que se procesan en el orden en el que aparecen aquí.
   (set-face-attribute 'variable-pitch nil :family "Fira Sans" :height 1.10)
   ;; Monospaced typeface
   (set-face-attribute 'fixed-pitch nil :family "Fira Code" :height 1.10)
-  #+END_SRC
+#+END_SRC
 
 ** Temas gráficos
 Elegir entre los temas: modus-themes / ef-themes
@@ -345,6 +346,7 @@ Elegir entre los temas: modus-themes / ef-themes
     :after org
     :config (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
 #+END_SRC
+
 ** ORG Roam
 ;;#+BEGIN_SRC emacs-lisp
   (use-package org-roam
@@ -353,23 +355,32 @@ Elegir entre los temas: modus-themes / ef-themes
 
 ** AUCTeX
 #+BEGIN_SRC emacs-lisp
-  ;;-----------------------------------------------------------------------
-  ;; AUCTeX
-  (use-package tex
-  :ensure auctex
-  :ensure auctex-lua
-  :config
-  (setq TeX-auto-save t)
-  (setq TeX-parse-self t)
-  (setq-default TeX-master nil)
-  (add-hook 'LaTeX-mode-hook 'visual-line-mode) ; podríamos preferir 'auto-fill-mode
-  (add-hook 'LaTeX-mode-hook 'flyspell-mode)
-  (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
-  (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
-  (setq reftex-plug-into-AUCTeX t))
-  ;;(luatex "LuaTeX" "luatex" "lualatex --jobname=%(s-filename-only)" "luatex")
-  (add-to-list 'auto-mode-alist '("\\.mkltx\\'" . ConTeXt-mode))
-  (setq require 'auctex-lua)
+    ;;-----------------------------------------------------------------------
+    ;; AUCTeX
+    (use-package tex
+    :ensure auctex
+    :ensure auctex-lua
+    :config
+    (setq TeX-auto-save t)
+    (setq TeX-parse-self t)
+    (setq-default TeX-master nil)
+    (add-hook 'LaTeX-mode-hook 'visual-line-mode) ; podríamos preferir 'auto-fill-mode
+    (add-hook 'LaTeX-mode-hook 'flyspell-mode)
+    (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+    (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+    (setq reftex-plug-into-AUCTeX t))
+    ;;(luatex "LuaTeX" "luatex" "lualatex --jobname=%(s-filename-only)" "luatex")
+    ;;(add-to-list 'auto-mode-alist '("\\.mkltx\\'" . ConTeXt-mode))
+    ;;(setq TeX-view-program-selection '((output-pdf papers)))
+    (setq require 'auctex-lua)
+    ;; Define "Papers" como programa para ver salida en pdf
+    (add-to-list
+     'TeX-view-program-list '("Papers" "papers %o"))
+    ;; Especifica "Papers" como programa por defecto para  ver salida en pdf
+    (setq TeX-view-program-selection
+          '((output-pdf "Papers")
+    	(output-dvi "xdvi")
+    	(output-html "xdg-open")))
 #+END_SRC
 
 ** Tramp
@@ -490,26 +501,17 @@ M-x toggle-input-method.
   ;; Permite elegir una implementación de lisp: 'sbcl', 'ccl' y 'ecl'
   (setq slime-lisp-implementations
         '((sbcl ("/usr/local/bin/sbcl") :coding-system utf-8-unix)
-          (ccl ("~/.soft/lisp/clozure/ccl/lx86cl64"))
-          (ecl ("/usr/bin/ecl"))))
+          (ccl ("~/.local/bin/ccl"))
+          (ecl ("/usr/local/bin/ecl"))))
 #+END_SRC
 
 ** Aspell
-;;#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp
   ;;-----------------------------------------------------------------------
   ;; Aspell
   (setq-default ispell-program-name "aspell")
   (setq ispell-dictionary "castellano")
-;;#+END_SRC
-
-;;#+BEGIN_SRC common-lisp
-  ;;; The following lines added by ql:add-to-init-file:
-#-quicklisp
-(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
-                                       (user-homedir-pathname))))
-  (when (probe-file quicklisp-init)
-    (load quicklisp-init)))
-;;#+END_SRC
+#+END_SRC
 
 *** Fichero .sbclrc
 #+BEGIN_SRC common-lisp
@@ -551,6 +553,6 @@ mediante: =M-.=
 #+BEGIN_SRC emacs-lisp
   ;;-----------------------------------------------------------------------
   ;; Código fuente de emacs
-  (setq source-directory "~/.soft/emacs/emacs-30.1")
+  (setq source-directory "~/.soft/emacs/emacs-30.2")
 #+END_SRC
 
