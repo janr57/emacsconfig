@@ -355,32 +355,32 @@ Elegir entre los temas: modus-themes / ef-themes
 
 ** AUCTeX
 #+BEGIN_SRC emacs-lisp
-    ;;-----------------------------------------------------------------------
-    ;; AUCTeX
-    (use-package tex
-    :ensure auctex
-    :ensure auctex-lua
-    :config
-    (setq TeX-auto-save t)
-    (setq TeX-parse-self t)
-    (setq-default TeX-master nil)
-    (add-hook 'LaTeX-mode-hook 'visual-line-mode) ; podríamos preferir 'auto-fill-mode
-    (add-hook 'LaTeX-mode-hook 'flyspell-mode)
-    (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
-    (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
-    (setq reftex-plug-into-AUCTeX t))
-    ;;(luatex "LuaTeX" "luatex" "lualatex --jobname=%(s-filename-only)" "luatex")
-    ;;(add-to-list 'auto-mode-alist '("\\.mkltx\\'" . ConTeXt-mode))
-    ;;(setq TeX-view-program-selection '((output-pdf papers)))
-    (setq require 'auctex-lua)
-    ;; Define "Papers" como programa para ver salida en pdf
-    (add-to-list
-     'TeX-view-program-list '("Papers" "papers %o"))
-    ;; Especifica "Papers" como programa por defecto para  ver salida en pdf
-    (setq TeX-view-program-selection
-          '((output-pdf "Papers")
-    	(output-dvi "xdvi")
-    	(output-html "xdg-open")))
+  ;;-----------------------------------------------------------------------
+  ;; AUCTeX
+  (use-package tex
+  :ensure auctex
+  :ensure auctex-lua
+  :config
+  (setq TeX-auto-save t)
+  (setq TeX-parse-self t)
+  (setq-default TeX-master nil)
+  (add-hook 'LaTeX-mode-hook 'visual-line-mode) ; podríamos preferir 'auto-fill-mode
+  (add-hook 'LaTeX-mode-hook 'flyspell-mode)
+  (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+  (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+  (setq reftex-plug-into-AUCTeX t))
+  ;;(luatex "LuaTeX" "luatex" "lualatex --jobname=%(s-filename-only)" "luatex")
+  ;;(add-to-list 'auto-mode-alist '("\\.mkltx\\'" . ConTeXt-mode))
+  ;;(setq TeX-view-program-selection '((output-pdf papers)))
+  (setq require 'auctex-lua)
+  ;; Define "Papers" como programa para ver salida en pdf
+  (add-to-list
+   'TeX-view-program-list '("Papers" "papers %o"))
+  ;; Especifica "Papers" como programa por defecto para  ver salida en pdf
+  (setq TeX-view-program-selection
+        '((output-pdf "Papers")
+  	(output-dvi "xdvi")
+  	(output-html "xdg-open")))
 #+END_SRC
 
 ** Tramp
