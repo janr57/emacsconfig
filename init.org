@@ -169,8 +169,8 @@ añadir al fichero '.bashrc' las líneas:
   	  (display-graphic-p)
   	  (eq window-system 'w32))
       (progn
-        ;;(setq frame-height 59) ; Portátil HP Marián
-        (setq frame-height 51) ; Monitor LG IPS LED
+        (setq frame-height 59) ; Portátil HP Marián
+        ;;(setq frame-height 51) ; Monitor LG IPS LED
         (setq frame-width 90)
         (setq frame-left 0)
         (setq frame-top 0)
@@ -375,10 +375,11 @@ Elegir entre los temas: modus-themes / ef-themes
   (setq require 'auctex-lua)
   ;; Define "Papers" como programa para ver salida en pdf
   (add-to-list
-   'TeX-view-program-list '("Papers" "papers %o"))
+   'TeX-view-program-list '("Evince" "evince %o"))
+   ;;'TeX-view-program-list '("Papers" "papers %o"))
   ;; Especifica "Papers" como programa por defecto para  ver salida en pdf
   (setq TeX-view-program-selection
-        '((output-pdf "Papers")
+        '((output-pdf "Evince")
   	(output-dvi "xdvi")
   	(output-html "xdg-open")))
 #+END_SRC
