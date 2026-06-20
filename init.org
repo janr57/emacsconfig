@@ -481,6 +481,10 @@ M-x toggle-input-method.
   :ensure t
   :init (vertico-mode))
 #+END_SRC
+** Context
+#+BEGIN_SRC emacs-lisp
+  (setq ConTeXt-Mark-version "LMTX")
+#+END_SRC
 
 ** Common Lisp
 #+BEGIN_SRC emacs-lisp
